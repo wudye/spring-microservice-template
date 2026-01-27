@@ -1,0 +1,47 @@
+server:
+  port: 18092
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+      physical_naming_strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate.format_sql: true
+  datasource:
+    url: jdbc:postgresql://postgresdb:5432/mwu_dev
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      pool-name: HikariCP
+      max-lifetime: 2000000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+    platform: postgres
+    testWhileIdle: true
+    validationQuery: SELECT 1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    enabled-by-default: true
+  endpoint:
+    health:
+      show-details: always
+
+eureka:
+    instance:
+      preferIpAddress: true
+    client:
+      registerWithEureka: true
+      fetchRegistry: true
+      serviceUrl:
+        defaultZone: http://eurekaserver:18070/eureka/

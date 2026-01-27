@@ -1,0 +1,118 @@
+server:
+  port: 18091
+# 在 spring 节点下添加
+spring:
+  # ===== Spring Cloud Stream 配置 =====
+  cloud:
+    function:
+      definition: inboundOrgChanges  # 定义函数名称
+
+    stream:
+      kafka:
+        binder:
+          brokers: kafka               # Kafka 服务器地址
+          auto-create-topics: true     # 自动创建 Topic
+
+      bindings:
+        # 函数式消费者绑定配置
+        inboundOrgChanges-in-0:
+          destination: orgChangeTopic  # ← 与生产者的 topic 一致
+          content-type: application/json
+          group: licensingGroup        # 消费者组（实现负载均衡）
+
+          # 消费者配置
+          consumer:
+            max-attempts: 3            # 失败重试次数
+            back-off-initial-interval: 1000  # 重试间隔
+            back-off-multiplier: 2.0
+
+  application:
+    name: licensing-service
+  profiles:
+    active: dev
+  config:
+    import: optional:configserver:http://configserver:18081/
+
+  datasource:
+    url: jdbc:postgresql://localhost:7432/mwu_dev
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    access:
+      default: unrestricted
+  endpoint:
+    health:
+      show-details: always
+
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://localhost:18070/eureka/
+
+resilience4j.circuitbreaker:
+  instances:
+    licenseService:
+      registerHealthIndicator: true
+      slidingWindowSize: 5
+      permittedNumberOfCallsInHalfOpenState: 3
+      waitDurationInOpenState: 10s
+      failureRateThreshold: 50
+      recordExceptions:
+        - org.springframework.web.client.HttpServerErrorException
+        - java.io.IOException
+        - java.util.concurrent.TimeoutException
+        - org.springframework.web.client.ResourceAccessException
+    organizationService:
+      registerHealthIndicator: true
+      slidingWindowSize: 6
+      permittedNumberOfCallsInHalfOpenState: 4
+      waitDurationInOpenState: 20s
+      failureRateThreshold: 60
+
+resilience4j.ratelimiter:
+  instances:
+    licenseService:
+      limitForPeriod: 5
+      limitRefreshPeriod: 5000
+      timeoutDuration: 1000ms
+
+resilience4j.retry:
+  instances:
+    retryLicenseService:
+      maxAttempts: 5
+      waitDuration: 10000
+      retry-exceptions:
+        - java.util.concurrent.TimeoutException
+
+resilience4j.bulkhead:
+  instances:
+    bulkheadLicenseService:
+      maxWaitDuration: 2ms
+      maxConcurrentCalls: 20
+
+resilience4j.thread-pool-bulkhead:
+  instances:
+    bulkheadLicenseService:
+      maxThreadPoolSize: 20
+      coreThreadPoolSize: 10
+      queueCapacity: 100
+example:
+  redis:
+    server: localhost
+    port: 6379

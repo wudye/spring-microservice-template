@@ -1,0 +1,11 @@
+server:
+  port: 18091
+
+example:
+  property: "hello I am a licensing service in dev environment!!!!!!!!!!!"
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgresdb:5432/mwu_dev
+    username: postgres
+    password: postgres

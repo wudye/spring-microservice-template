@@ -1,0 +1,84 @@
+
+
+
+server:
+  port: 18092
+
+spring:
+  application:
+    name: organization-service
+  profiles:
+    active: dev
+#  cloud:
+#    config:
+#      uri: http://configserver:18081
+#      enabled: true
+  config:
+    import: optional:configserver:http://configserver:18081/
+
+  datasource:
+    url: jdbc:postgresql://localhost:7432/mwu_dev
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    jpa:
+      hibernate:
+        ddl-auto: update
+      show-sql: true
+      database-platform: org.hibernate.dialect.PostgreSQLDialect
+  stream:
+    bindings:
+      output:
+        destination: orgChangeTopic
+        content-type: application/json
+  cloud:
+    stream:
+      kafka:
+        binder:
+          zkNodes: kafka
+          brokers: kafka
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "http://localhost:9080/realms/mwu_realm"
+      client:
+        registration:
+          keycloak:
+            client-id: "mwu"
+            client-secret: "2LnwrRFHqA6nFUco5jtL6b9kEBCSyKAe"
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          keycloak:
+            issuer-uri: "http://localhost:9080/realms/mwu_realm"
+            user-name-attribute: preferred_username
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    access:
+        default: unrestricted
+  endpoint:
+    health:
+      show-details: always
+
+
+eureka:
+  instance:
+    preferIpAddress: true
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://localhost:18070/eureka/
+
+
+

@@ -1,0 +1,113 @@
+version: '2.1'
+services:
+  postgresdb:
+    image: postgres:latest
+    container_name: template_postgres
+    ports:
+      - "7432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB:       "mwu_dev"
+    volumes:
+        - ./postgre/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+        - ./postgre/data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    networks:
+      backend:
+        aliases:
+          - "database"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  configserver:
+    image: mwu42/configserver:1.0
+    container_name: template_configserver
+    ports:
+       - "28081:18081"
+    networks:
+      backend:
+        aliases:
+          - "configserver"
+
+  eurekaserver:
+    image: mwu42/eurekaserver:1.0
+    container_name: template_eurekaserver
+    ports:
+      - "28070:18070"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started  
+    networks:
+      backend:
+        aliases:
+          - "eurekaserver"
+
+  licensingservice:
+    image: mwu42/licensing-service:1.0
+    container_name: template_licensingservice
+    environment:
+      PROFILE: "dev"
+      CONFIGSERVER_URI: "http://configserver:18081"
+      CONFIGSERVER_PORT:   "18081"
+      DATABASESERVER_PORT: "5432"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    ports:
+      - "28091:18091"
+    networks:
+      - backend
+
+  organizationservice:
+    image: mwu42/organization-service:1.0
+    container_name: template_organizationservice
+    environment:
+      PROFILE: "dev"
+      CONFIGSERVER_URI: "http://configserver:18081"
+      CONFIGSERVER_PORT:   "18071"
+      DATABASESERVER_PORT: "5432"
+      ENCRYPT_KEY:       "IMSYMMETRIC"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    ports:
+      - "28092:18092"
+    networks:
+      - backend
+
+
+  gatewayserver:
+    image: mwu42/gatewayserver:1.0
+    ports:
+      - "28072:18072"
+    environment:
+      PROFILE: "default"
+      SERVER_PORT: "18072"
+      CONFIGSERVER_URI: "http://configserver:18081"
+      EUREKASERVER_URI: "http://eurekaserver:18070/eureka/"
+      EUREKASERVER_PORT: "18070"
+      CONFIGSERVER_PORT: "18081"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+      eurekaserver:
+        condition: service_started
+    networks:
+      backend:
+        aliases:
+          - "gateway"
+
+networks:
+  backend:
+    driver: bridge

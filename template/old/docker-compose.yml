@@ -1,0 +1,79 @@
+services:
+  postgresdb:
+    image: postgres:latest
+    container_name: template_postgres
+    ports:
+      - "7432:5432"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "mwu_dev"
+    volumes:
+        - ./docker/postgre/init.sql:/docker-entrypoint-initdb.d/1-init.sql
+        - ./docker/postgre/data.sql:/docker-entrypoint-initdb.d/2-data.sql
+    networks:
+      - template
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  configserver:
+    build:
+      context: .
+      dockerfile: ./configserver/Dockerfile
+    container_name: template_configserver
+    environment:
+      profile: "native"
+    ports:
+       - "28081:18081"
+    networks:
+      - template
+      -
+
+  licensingservice:
+    build:
+      context: .
+      dockerfile: ./licensing-service/Dockerfile
+    container_name: template_licensingservice
+    ports:
+      - "28091:18091"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:18081"
+      postgresdb_uri: "jdbc:postgresql://postgresdb:5432/mwu_dev"
+      configserver_port: "18081"
+      postgresdb_port: "5432"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    networks:
+      - template
+
+  organizationservice:
+    build:
+      context: .
+      dockerfile: ./organization-service/Dockerfile
+    container_name: template_organizationservice
+    ports:
+      - "28092:18092"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_CLOUD_CONFIG_URI: "http://configserver:18081"
+      postgresdb_uri: "jdbc:postgresql://postgresdb:5432/mwu_dev"
+      configserver_port: "18081"
+      postgresdb_port: "5432"
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+      configserver:
+        condition: service_started
+    networks:
+      - template
+
+networks:
+  template:
+    driver: bridge
