@@ -55,3 +55,7 @@ git remote remove tempTest
 git status
 git remote -v
 git branch -vv
+
+
+push for test
+git subtree push -P "update to v2/template_v2" tempTest main
