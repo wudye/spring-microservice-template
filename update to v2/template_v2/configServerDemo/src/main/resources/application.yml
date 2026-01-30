@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: configServerDemo
+  profiles:
+    active: native
+  cloud:
+    config:
+        server:
+            native:
+                search-locations: classpath:/config-repo/
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+server:
+  port: 8081
+
+
+encrypt:
+  key: mysecretkey12345
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,refresh,bus-refresh

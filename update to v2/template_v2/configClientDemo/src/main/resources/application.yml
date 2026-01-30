@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: configClientDemo
+  config:
+    import: "optional:configserver:http://localhost:8081"
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: true
+        max-attempts: 2
+
+encrypt:
+  key: ${CONFIG_CLIENT_ENCRYPT_KEY:mysecretkey12345}
+
+server:
+  port: 8082
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    instance:
+      prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
