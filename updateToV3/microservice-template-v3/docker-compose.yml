@@ -1,0 +1,34 @@
+services:
+
+
+  product-service:
+    build:
+      context: .
+      dockerfile: ./services/product-service/Dockerfile
+    container_name: product-service
+    ports:
+      - "7001:8080"
+
+  recommendation-service:
+    build:
+      context: .
+      dockerfile: ./services/recommendation-service/Dockerfile
+    container_name: recommendation-service
+    ports:
+      - "7002:8080"
+
+  review-service:
+    build:
+      context: .
+      dockerfile: ./services/review-service/Dockerfile
+    container_name: review-service
+    ports:
+      - "7003:8080"
+
+  product-composite:
+    build:
+      context: .
+      dockerfile: ./services/product-composite-service/Dockerfile
+    container_name: product-composite-service
+    ports:
+      - "7000:8080"
