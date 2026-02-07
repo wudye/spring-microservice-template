@@ -1,2 +1,10 @@
 rootProject.name = 'templatev3'
 include 'api'
+include 'util'
+
+include 'microervices'
+
+include 'microervices:product-composite-service'
+include 'microervices:product-service'
+include 'microervices:recommendation-service'
+include 'microervices:review-service'
