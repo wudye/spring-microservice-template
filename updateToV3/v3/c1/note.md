@@ -1,0 +1,1 @@
+In Java, interface methods are implicitly public abstract
